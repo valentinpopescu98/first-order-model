@@ -114,14 +114,14 @@ if __name__ == "__main__":
     parser.add_argument("--relative", dest="relative", action="store_true", help="use relative or absolute keypoint coordinates")
     parser.add_argument("--adapt_scale", dest="adapt_scale", action="store_true", help="adapt movement scale based on convex hull of keypoints")
 
-    parser.add_argument("--find_best_frame", dest="find_best_frame", action="store_true", 
+    parser.add_argument("--find_best_frame", dest="find_best_frame", action="store_true",
                         help="Generate from the frame that is the most alligned with source. (Only for faces, requires face_aligment lib)")
 
     parser.add_argument("--best_frame", dest="best_frame", type=int, default=None,  
                         help="Set frame to start from.")
  
     parser.add_argument("--cpu", dest="cpu", action="store_true", help="cpu mode.")
- 
+
 
     parser.set_defaults(relative=False)
     parser.set_defaults(adapt_scale=False)
