@@ -104,6 +104,8 @@ def find_best_frame(source, driving, cpu=False):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
+    parser.add_argument("--fps", required=True, help="resulting video's frames per second")
+
     parser.add_argument("--config", required=True, help="path to config")
     parser.add_argument("--checkpoint", default='vox-cpk.pth.tar', help="path to checkpoint to restore")
 
@@ -130,7 +132,8 @@ if __name__ == "__main__":
 
     source_image = imageio.imread(opt.source_image)
     reader = imageio.get_reader(opt.driving_video)
-    fps = reader.get_meta_data()['fps']
+    # fps = reader.get_meta_data()['fps']
+    fps = opt.fps
     driving_video = []
     try:
         for im in reader:

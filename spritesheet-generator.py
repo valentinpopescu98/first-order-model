@@ -2,16 +2,13 @@ import os, os.path
 from argparse import ArgumentParser
 from PIL import Image
 
-# 1. Run next line in console to convert from GIF to MP4 file:
-# ffmpeg -r 30 -i drv_video/input.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" drv_video/output.mp4
+# 1. Run next line in console to generate a demo:
+# python demo.py --fps 30 --config config/mgif-256.yaml --driving_video drv_video/output.mp4 --source_image src_image/image.png --checkpoint checkpoints/mgif-cpk.pth.tar --result_video results/result.mp4 --relative --adapt_scale
 
-# 2. Run next line in console to generate a demo:
-# python demo.py  --config config/mgif-256.yaml --driving_video drv_video/output.mp4 --source_image src_image/image.png --checkpoint checkpoints/mgif-cpk.pth.tar --result_video results/result.mp4 --relative --adapt_scale
-
-# 3. Run next line in console to generate frames as images:
+# 2. Run next line in console to generate frames as images:
 # python extract-frames.py --inp results/input.mp4
 
-# 4. Run next line in console to generate sprite sheet:
+# 3. Run next line in console to generate sprite sheet:
 # python spritesheet-generator.py --inp results/inputFrames
 
 def addTransparency(img):

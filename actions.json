@@ -1,0 +1,10 @@
+{
+  "merge": {
+    "file_for_humanoid": "man-walk.gif",
+    "file_for_quadruped": "horse-walk.gif"
+  },
+  "alearga": {
+    "file_for_humanoid": "man-run.gif",
+    "file_for_quadruped": "horse-canter.gif"
+  }
+}

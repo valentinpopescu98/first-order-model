@@ -1,0 +1,10 @@
+{
+  "scufita": {
+    "file": "scufita-side.png",
+    "type": "humanoid"
+  },
+  "calul": {
+    "file": "horse.jpg",
+    "type": "quadruped"
+  }
+}
