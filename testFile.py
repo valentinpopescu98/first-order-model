@@ -1,12 +1,10 @@
-import glob
-import os
-import os.path
-import shutil
-
 import cv2
-import numpy as np
+import os
+import shutil
+import glob
 from PIL import Image
 
+import numpy as np
 
 ########################################################################
 ###                          EXTRACT FRAMES                          ###
@@ -20,27 +18,27 @@ def offset(nr, max_nr):
 
     return '0' * (max_len - nr_len) + str(nr)
 
-
 def extract_frames(gif):
-    vid_cap = cv2.VideoCapture(gif)
+    input = gif
+
+    vid_cap = cv2.VideoCapture(input)
     success, image = vid_cap.read()
     count = 0
 
     while success:
-        if not os.path.exists(f"{gif[:-4]}-frames"):
-            os.makedirs(f"{gif[:-4]}-frames")
-        cv2.imwrite(f"{gif[:-4]}-frames\\frame%d.jpg" % count, image)  # save frame as JPEG file
+        if not os.path.exists(f"{input[:-4]}-frames"):
+            os.makedirs(f"{input[:-4]}-frames")
+        cv2.imwrite(f"{input[:-4]}-frames\\frame%d.jpg" % count, image)  # save frame as JPEG file
         success, image = vid_cap.read()
         print('Read a new frame: ', success)
         count += 1
 
-    max_count = len([name for name in os.listdir(f"{gif[:-4]}-frames\\.")]) - 1
+    max_count = len([name for name in os.listdir(f"{input[:-4]}-frames\\.")]) - 1
     for count in range(max_count + 1):
-        os.rename(f"{gif[:-4]}-frames\\frame%d.jpg" % count,
-                  f"{gif[:-4]}-frames\\frame%s.jpg" % offset(count, max_count))
+        os.rename(f"{input[:-4]}-frames\\frame%d.jpg" % count,
+                  f"{input[:-4]}-frames\\frame%s.jpg" % offset(count, max_count))
 
     print("Successful")
-
 
 ########################################################################
 ###                       REMOVE BACKGROUNDS                         ###
@@ -79,36 +77,33 @@ def remove_backgrounds(frames_dir_path):
         cv2.imwrite(f"{img_path[:-4]}.png", result)
         os.remove(img_path)
 
-
 ########################################################################
-###                       GENERATE SPRITESHEET                       ###
+###                           GENERATE GIF                           ###
 ########################################################################
-def generate_spritesheet(frames_dir_path):
-    images = [Image.open(img_path) for img_path in glob.glob(f"{frames_dir_path}/*")]
+def overlap(foreground, background, size, offset):
+    for current_frame in foreground:
+        current_background = background.copy()
+        current_foreground = current_frame.convert(mode="RGBA").resize(size)
+        current_background.alpha_composite(current_foreground, dest=offset)
+        yield current_background
 
-    widths, heights = zip(*(i.size for i in images))
+def generate_gif(frames_dir_path, background_image_path):
+    images = []
 
-    total_width = sum(widths)
-    max_height = max(heights)
+    for frame in range(15):
+        images.append(Image.open(f"{frames_dir_path}/frame%02d.png" % frame))
 
-    new_im = Image.new('RGBA', (total_width, max_height))
+    bg_image = Image.open(background_image_path).convert(mode="RGBA")
 
-    x_offset = 0
-    for im in images:
-        new_im.paste(im, (x_offset, 0))
-        x_offset += im.size[0]
-
-    # new_im = add_transparency(new_im)
-
-    new_im.save(f"{frames_dir_path[:-7]}-spritesheet.png", "PNG")
-
+    frames = tuple(overlap(images, bg_image, (100, 100), (220, 25)))
+    frames[0].save('results/result.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
 ########################################################################
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     gif = "results/calul-alearga.gif"
 
     extract_frames(gif)
     remove_backgrounds(f"{gif[:-4]}-frames")
-    generate_spritesheet(f"{gif[:-4]}-frames")
+    generate_gif(f"{gif[:-4]}-frames", "cartoon_env/forest.jpg")
     shutil.rmtree(f"{gif[:-4]}-frames")
