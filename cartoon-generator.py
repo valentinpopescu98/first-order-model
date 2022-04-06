@@ -145,15 +145,18 @@ def generate_gif(frames_dir_path, background_image_path):
 
     bg_image = Image.open(background_image_path).convert(mode="RGBA")
 
-    frames = tuple(overlap(images, bg_image, (100, 100), (220, 25)))
+    frames = tuple(overlap(images, bg_image, (300, 300), (100, 200)))
     frames[0].save('results/result.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
 
 ########################################################################
 
+
 if __name__ == "__main__":
     # Create 2 variables and input them from keyboard
     words = input("Enter the sentence: ").split()
+
+    is_place_given = len(words) is 3
 
     # Read the characters and actions JSONs and parse their data
     characters_data = get_files_data("characters.json")
@@ -170,16 +173,18 @@ if __name__ == "__main__":
     place = get_place(words, places_data)
 
     # Generate a name for the result file with given character and action separated by "_"
-    result = f"{words[0]}-{words[1]}.gif"
+    result = f"{words[0]}-{words[1]}-{words[2]}.gif" if is_place_given\
+        else f"{words[0]}-{words[1]}.gif"
 
     # Generate the demo using the created variables for files names inputs
     exec_terminal_command(30, image, video, result)
 
-    # Get the resulted GIF as input and remove its white background
-    extract_frames(f"results/{result}")
-    remove_backgrounds(f"results/{result[:-4]}-frames")
+    if is_place_given:
+        # Get the resulted GIF as input and remove its white background
+        extract_frames(f"results/{result}")
+        remove_backgrounds(f"results/{result[:-4]}-frames")
 
-    # Create a new GIF and overlap it on the background image
-    generate_gif(f"results/{result[:-4]}-frames", "cartoon_env/forest.jpg")
-    shutil.rmtree(f"results/{result[:-4]}-frames")
-    os.remove(f"results/{result}")
+        # Create a new GIF and overlap it on the background image
+        generate_gif(f"results/{result[:-4]}-frames", f"cartoon_env/{place}")
+        shutil.rmtree(f"results/{result[:-4]}-frames")
+        os.remove(f"results/{result}")

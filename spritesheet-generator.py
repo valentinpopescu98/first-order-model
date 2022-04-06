@@ -105,6 +105,7 @@ def generate_spritesheet(frames_dir_path):
 
 ########################################################################
 
+
 if __name__ == "__main__":
     gif = "results/calul-alearga.gif"
 
