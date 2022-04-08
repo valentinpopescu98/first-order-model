@@ -2,10 +2,22 @@ import glob
 import os
 import os.path
 import shutil
+import subprocess
 
 import cv2
 import numpy as np
 from PIL import Image
+
+########################################################################
+###                          GENERATE DEMO                           ###
+########################################################################
+def exec_terminal_command(fps, image, video, result):
+    subprocess.run([
+        "python", "demo.py", "--fps", f"{fps}", "--config", "config/mgif-256.yaml", "--driving_video",
+        f"drv_video/{video}",
+        "--source_image", f"src_image/{image}", "--checkpoint", "checkpoints/mgif-cpk.pth.tar", "--result_video",
+        f"results/{result}", "--relative", "--adapt_scale"
+    ], shell=True)
 
 
 ########################################################################
@@ -107,9 +119,19 @@ def generate_spritesheet(frames_dir_path):
 
 
 if __name__ == "__main__":
-    gif = "results/calul-alearga.gif"
+    # Create 2 variables and input them from keyboard
+    words = input("Enter the sentence: ").split()
 
-    extract_frames(gif)
-    remove_backgrounds(f"{gif[:-4]}-frames")
-    generate_spritesheet(f"{gif[:-4]}-frames")
-    shutil.rmtree(f"{gif[:-4]}-frames")
+    image = "horse.jpg"
+    video = "horse-canter.gif"
+
+    # Generate a name for the result file with given character and action separated by "_"
+    result = f"{words[0]}-{words[1]}.gif"
+
+    # Generate the demo using the created variables for files names inputs
+    exec_terminal_command(30, image, video, result)
+
+    extract_frames(f"results/{result}")
+    remove_backgrounds(f"results/{result[:-4]}-frames")
+    generate_spritesheet(f"results/{result[:-4]}-frames")
+    shutil.rmtree(f"results/{result[:-4]}-frames")
