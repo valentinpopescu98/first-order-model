@@ -1,0 +1,3 @@
+[submodule "fom/face-alignment"]
+	path = fom/face-alignment
+	url = git@github.com:1adrianb/face-alignment.git

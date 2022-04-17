@@ -12,12 +12,15 @@ from PIL import Image
 ###                          GENERATE DEMO                           ###
 ########################################################################
 def exec_terminal_command(fps, image, video, result):
+    os.chdir("fom")
+
     subprocess.run([
         "python", "demo.py", "--fps", f"{fps}", "--config", "config/mgif-256.yaml", "--driving_video",
-        f"drv_video/{video}",
-        "--source_image", f"src_image/{image}", "--checkpoint", "checkpoints/mgif-cpk.pth.tar", "--result_video",
-        f"results/{result}", "--relative", "--adapt_scale"
+        f"drv_video/{video}", "--source_image", f"src_image/{image}", "--checkpoint",
+        "checkpoints/mgif-cpk.pth.tar", "--result_video", f"../results/{result}", "--relative", "--adapt_scale"
     ], shell=True)
+
+    os.chdir("..")
 
 
 ########################################################################

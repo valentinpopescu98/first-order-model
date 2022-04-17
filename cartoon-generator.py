@@ -45,12 +45,15 @@ def get_place(words, places_json):
 ###                          GENERATE DEMO                           ###
 ########################################################################
 def exec_terminal_command(fps, image, video, result):
+    os.chdir("fom")
+
     subprocess.run([
         "python", "demo.py", "--fps", f"{fps}", "--config", "config/mgif-256.yaml", "--driving_video",
-        f"drv_video/{video}",
-        "--source_image", f"src_image/{image}", "--checkpoint", "checkpoints/mgif-cpk.pth.tar", "--result_video",
-        f"results/{result}", "--relative", "--adapt_scale"
+        f"drv_video/{video}", "--source_image", f"src_image/{image}", "--checkpoint",
+        "checkpoints/mgif-cpk.pth.tar", "--result_video", f"../results/{result}", "--relative", "--adapt_scale"
     ], shell=True)
+
+    os.chdir("..")
 
 
 ########################################################################
@@ -146,7 +149,7 @@ def generate_gif(frames_dir_path, background_image_path):
     bg_image = Image.open(background_image_path).convert(mode="RGBA")
 
     frames = tuple(overlap(images, bg_image, (300, 300), (100, 200)))
-    frames[0].save('results/result.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
+    frames[0].save(f'{frames_dir_path[:-7]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
 
 ########################################################################
@@ -187,4 +190,3 @@ if __name__ == "__main__":
         # Create a new GIF and overlap it on the background image
         generate_gif(f"results/{result[:-4]}-frames", f"cartoon_env/{place}")
         shutil.rmtree(f"results/{result[:-4]}-frames")
-        os.remove(f"results/{result}")

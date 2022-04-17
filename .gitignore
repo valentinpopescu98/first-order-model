@@ -1,8 +1,5 @@
-/.vscode
-/venv
 .idea
 __pycache__
 
-log
-checkpoints/**
-face-alignment
+fom/log
+fom/checkpoints/**
