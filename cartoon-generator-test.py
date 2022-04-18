@@ -59,16 +59,6 @@ def exec_terminal_command(fps, image, video, result):
 ########################################################################
 ###                          EXTRACT FRAMES                          ###
 ########################################################################
-def offset(nr, max_nr):
-    nr_temp = nr
-    max_nr_temp = max_nr
-
-    nr_len = len(str(nr_temp))
-    max_len = len(str(max_nr_temp))
-
-    return '0' * (max_len - nr_len) + str(nr)
-
-
 def extract_frames(gif):
     vid_cap = cv2.VideoCapture(gif)
     success, image = vid_cap.read()
@@ -77,18 +67,9 @@ def extract_frames(gif):
     while success:
         if not os.path.exists(f"{gif[:-4]}-frames"):
             os.makedirs(f"{gif[:-4]}-frames")
-        cv2.imwrite(f"{gif[:-4]}-frames\\frame%d.jpg" % count, image)  # save frame as JPEG file
+        cv2.imwrite(f"{gif[:-4]}-frames\\frame%02d.jpg" % count, image)  # save frame as JPEG file
         success, image = vid_cap.read()
-        print('Read a new frame: ', success)
         count += 1
-
-    print([name for name in os.listdir(f"{gif[:-4]}-frames\\.")])
-    max_count = len([name for name in os.listdir(f"{gif[:-4]}-frames\\.")]) - 1
-    for count in range(max_count + 1):
-        os.rename(f"{gif[:-4]}-frames\\frame%d.jpg" % count,
-                  f"{gif[:-4]}-frames\\frame%s.jpg" % offset(count, max_count))
-
-    print("Successful")
 
 
 ########################################################################
@@ -140,41 +121,69 @@ def overlap_gif_on_background(foreground, background, size, offset):
         yield current_background
 
 
-def generate_gif(frames_dir_path, background_image_path):
+def generate_gif_with_background(fg_frames_dir_path, bg_image_path):
     images = []
 
     for frame in range(15):
-        images.append(Image.open(f"{frames_dir_path}/frame%02d.png" % frame))
+        images.append(Image.open(f"{fg_frames_dir_path}/frame%02d.png" % frame))
 
-    bg_image = Image.open(background_image_path).convert(mode="RGBA")
+    bg_image = Image.open(bg_image_path).convert(mode="RGBA")
 
     frames = tuple(overlap_gif_on_background(images, bg_image, (300, 300), (100, 200)))
-    frames[0].save(f'{frames_dir_path[:-7]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
+    frames[0].save(f'{fg_frames_dir_path[:-7]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
 
 ########################################################################
 ########################################################################
 ########################################################################
-def create_image_with_text(size, text, font):
-    width, height = size
+def create_image_with_text(text, font, color, offset):
+    x, y = offset
+
     img = Image.new('RGBA', (400, 400))
     draw = ImageDraw.Draw(img)
-    draw.text((width, height), text, font=font, fill="black")
+    draw.text((x, y), text, font=font, fill=color)
     return img
 
 
-def create_text_animation(text, font, offset):
+def create_text_animation_frames(text, font, color, offset):
     x, y = offset
     frames = []
 
     for i in range(len(text) + 20):
         if i < len(text):
-            new_frame = create_image_with_text((x, y), text[:i], font)
+            new_frame = create_image_with_text(text[:i], font, color, (x, y))
         else:
-            new_frame = create_image_with_text((x, y), text, font)
+            new_frame = create_image_with_text(text, font, color, (x, y))
         frames.append(new_frame)
 
     return frames
+
+
+########################################################################
+########################################################################
+########################################################################
+def generate_gif_with_text(bg_frames_dir_path):
+    frames_bg = []
+    frames_fg = create_text_animation_frames(text, ImageFont.truetype('arial', 20), "black", (0, 0))
+
+    for frame in range(Image.open(f"{bg_frames_dir_path[:-7]}.gif").n_frames):
+        frames_bg.append(Image.open(f"{bg_frames_dir_path}/frame%02d.jpg" % frame).convert("RGBA"))
+
+    longest = len(frames_fg) if len(frames_fg) > len(frames_bg) else len(frames_bg)
+
+    results = []
+
+    for i in range(longest):
+        i_bg = i % len(frames_bg)
+        i_fg = i % len(frames_fg)
+
+        bg = frames_bg[i_bg].copy()
+        fg = frames_fg[i_fg].copy()
+
+        bg.alpha_composite(fg, (0, 0))
+        results.append(bg)
+
+    results[0].save(f"{bg_frames_dir_path[:-7]}.gif", save_all=True, append_images=results[1:], loop=0, duration=30)
 
 
 ########################################################################
@@ -185,17 +194,16 @@ if __name__ == "__main__":
     # sentence = "calul alearga"
     # sentence = "calul alearga sat"
     # sentence = "calul alearga spune: esti prost ca noaptea"
-    sentence = "calul alearga padure spune: esti prost ca noaptea"
+    sentence = "calul alearga sat spune: esti prost ca noaptea"
 
     is_text_given = False
 
+    # If the 'say' verb is parsed, split the given story from the character's dialogue
     if "spune" in sentence:
         is_text_given = True
         sentence, text = sentence.split(": ")
 
     sentence = sentence.split()
-
-    # TODO: de facut o animatie cu text scriindu-se
 
     # Read the characters and actions JSONs and parse their data
     characters_data = get_files_data("characters.json")
@@ -217,37 +225,21 @@ if __name__ == "__main__":
     # Generate the demo using the created variables for files names inputs
     exec_terminal_command(30, image, video, result)
 
+    # If there is a place given, generate background
     if place is not None:
         # Get the resulted GIF as input and remove its white background
         extract_frames(f"results/{result}")
         remove_backgrounds(f"results/{result[:-4]}-frames")
 
         # Create a new GIF and overlap it on the background image
-        generate_gif(f"results/{result[:-4]}-frames", f"cartoon_env/{place}")
+        generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}")
         shutil.rmtree(f"results/{result[:-4]}-frames")
 
+    # If the 'say' verb is parsed, animate character dialogue
     if is_text_given:
+        # Get the resulted GIF as input
         extract_frames(f"results/{result}")
 
-        frames_bg = []
-        frames_fg = create_text_animation(text, ImageFont.truetype('arial', 20), (0, 0))
-
-        for frame in range(Image.open(f"results/{result}").n_frames):
-            frames_bg.append(Image.open(f"results/{result[:-4]}-frames/frame%02d.jpg" % frame).convert("RGBA"))
-
-        longest = len(frames_fg) if len(frames_fg) > len(frames_bg) else len(frames_bg)
-
-        results = []
-
-        for i in range(longest):
-            i_bg = i % len(frames_bg)
-            i_fg = i % len(frames_fg)
-
-            bg = frames_bg[i_bg].copy()
-            fg = frames_fg[i_fg].copy()
-
-            bg.alpha_composite(fg, (0, 0))
-            results.append(bg)
-
-        results[0].save('results/result.gif', save_all=True, append_images=results[1:], loop=0, duration=30)
+        # Create a new GIF with text and overlap it on the old GIF without text
+        generate_gif_with_text(f"results/{result[:-4]}-frames")
         shutil.rmtree(f"results/{result[:-4]}-frames")

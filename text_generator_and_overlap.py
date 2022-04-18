@@ -4,22 +4,13 @@ import cv2
 
 from PIL import Image, ImageFont, ImageDraw
 
-file_name = "2.gif"
-folder_name = "2-frames"
+file_name = "1.gif"
+folder_name = "1-frames"
 
 frames_fg = []
 x, y = 0, 0
 font = ImageFont.truetype('arial', 20)
 string = "Salut fratelo. Ce pula mea mai faci?"
-
-def offset(nr, max_nr):
-    nr_temp = nr
-    max_nr_temp = max_nr
-
-    nr_len = len(str(nr_temp))
-    max_len = len(str(max_nr_temp))
-
-    return '0' * (max_len - nr_len) + str(nr)
 
 def extract_frames(gif):
     vid_cap = cv2.VideoCapture(gif)
@@ -29,16 +20,10 @@ def extract_frames(gif):
     while success:
         if not os.path.exists(f"{gif[:-4]}-frames"):
             os.makedirs(f"{gif[:-4]}-frames")
-        cv2.imwrite(f"{gif[:-4]}-frames\\frame%d.jpg" % count, image)  # save frame as JPEG file
+        cv2.imwrite(f"{gif[:-4]}-frames\\frame%02d.jpg" % count, image)  # save frame as JPEG file
         success, image = vid_cap.read()
         print('Read a new frame: ', success)
         count += 1
-
-    print([name for name in os.listdir(f"{gif[:-4]}-frames\\.")])
-    max_count = len([name for name in os.listdir(f"{gif[:-4]}-frames\\.")]) - 1
-    for count in range(max_count + 1):
-        os.rename(f"{gif[:-4]}-frames\\frame%d.jpg" % count,
-                  f"{gif[:-4]}-frames\\frame%s.jpg" % offset(count, max_count))
 
     print("Successful")
 
