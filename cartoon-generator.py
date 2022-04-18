@@ -118,7 +118,7 @@ def remove_backgrounds(frames_dir_path):
 
 
 ########################################################################
-###                           GENERATE GIF                           ###
+###                     GENERATE GIF WITH BACKGROUND                 ###
 ########################################################################
 def overlap_gif_on_background(foreground, background, size, offset):
     for current_frame in foreground:
@@ -128,10 +128,10 @@ def overlap_gif_on_background(foreground, background, size, offset):
         yield current_background
 
 
-def generate_gif_with_background(fg_frames_dir_path, bg_image_path):
+def generate_gif_with_background(fg_frames_dir_path, bg_image_path, frames_count):
     images = []
 
-    for frame in range(15):
+    for frame in range(frames_count):
         images.append(Image.open(f"{fg_frames_dir_path}/frame%02d.png" % frame))
 
     bg_image = Image.open(bg_image_path).convert(mode="RGBA")
@@ -143,7 +143,7 @@ def generate_gif_with_background(fg_frames_dir_path, bg_image_path):
 
 
 ########################################################################
-########################################################################
+###                    GENERATE GIF WITH ONLY TEXT                   ###
 ########################################################################
 def create_image_with_text(text, font, color, offset):
     x, y = offset
@@ -169,7 +169,7 @@ def create_text_animation_frames(text, font, color, offset):
 
 
 ########################################################################
-########################################################################
+###                GENERATE GIF WITH TEXT AND ANIMATION              ###
 ########################################################################
 def generate_gif_with_text(text, bg_frames_dir_path):
     frames_bg = []
@@ -243,7 +243,9 @@ if __name__ == "__main__":
         remove_backgrounds(f"results/{result[:-4]}-frames")
 
         # Create a new GIF and overlap it on the background image
-        generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}")
+        frames_count = Image.open(f"results/{result}").n_frames
+
+        generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}", frames_count)
         shutil.rmtree(f"results/{result[:-4]}-frames")
 
     # If the 'say' verb is parsed, animate character dialogue

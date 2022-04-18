@@ -59,7 +59,6 @@ def exec_terminal_command(fps, image, video, result):
 ########################################################################
 ###                          EXTRACT FRAMES                          ###
 ########################################################################
-# TODO: alternativa pt scriere fizica de fisiere (ca nu e eficienta)
 def extract_frames(gif):
     vid_cap = cv2.VideoCapture(gif)
     success, image = vid_cap.read()
