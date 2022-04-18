@@ -59,6 +59,7 @@ def exec_terminal_command(fps, image, video, result):
 ########################################################################
 ###                          EXTRACT FRAMES                          ###
 ########################################################################
+# TODO: alternativa pt scriere fizica de fisiere (ca nu e eficienta)
 def extract_frames(gif):
     vid_cap = cv2.VideoCapture(gif)
     success, image = vid_cap.read()
@@ -162,7 +163,7 @@ def create_text_animation_frames(text, font, color, offset):
 ########################################################################
 ########################################################################
 ########################################################################
-def generate_gif_with_text(bg_frames_dir_path):
+def generate_gif_with_text(text, bg_frames_dir_path):
     frames_bg = []
     frames_fg = create_text_animation_frames(text, ImageFont.truetype('arial', 20), "black", (0, 0))
 
@@ -193,13 +194,14 @@ if __name__ == "__main__":
     # Create 2 variables and input them from keyboard
     # sentence = "calul alearga"
     # sentence = "calul alearga sat"
-    # sentence = "calul alearga spune: esti prost ca noaptea"
-    sentence = "calul alearga sat spune: esti prost ca noaptea"
+    sentence = "calul alearga spune: esti prost ca noaptea"
+    # sentence = "calul alearga sat spune: esti prost ca noaptea"
 
     is_text_given = False
+    say_verb = "spune"
 
     # If the 'say' verb is parsed, split the given story from the character's dialogue
-    if "spune" in sentence:
+    if say_verb in sentence:
         is_text_given = True
         sentence, text = sentence.split(": ")
 
@@ -241,5 +243,5 @@ if __name__ == "__main__":
         extract_frames(f"results/{result}")
 
         # Create a new GIF with text and overlap it on the old GIF without text
-        generate_gif_with_text(f"results/{result[:-4]}-frames")
+        generate_gif_with_text(text, f"results/{result[:-4]}-frames")
         shutil.rmtree(f"results/{result[:-4]}-frames")
