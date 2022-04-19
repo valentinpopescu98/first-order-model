@@ -200,59 +200,77 @@ def generate_gif_with_text(text, bg_frames_dir_path):
 
 if __name__ == "__main__":
     # Create 2 variables and input them from keyboard
-    sentence = input("Enter the sentence: ")
+    phrase = input("Enter the sentence: ").split(". ")
 
-    is_text_given = False
-    say_verb = "spune"
+    gifs = []
 
-    # If the 'say' verb is parsed, split the given story from the character's dialogue
-    if say_verb in sentence:
-        is_text_given = True
-        sentence, text = sentence.split(": ")
+    for sentence in phrase:
+        is_text_given = False
+        say_verb = "spune"
 
-    # Split the words from the story part
-    sentence = sentence.split()
+        # If the 'say' verb is parsed, split the given story from the character's dialogue
+        if say_verb in sentence:
+            is_text_given = True
+            sentence, text = sentence.split(": ")
 
-    # Read the characters and actions JSONs and parse their data
-    characters_data = get_files_data("characters.json")
-    actions_data = get_files_data("actions.json")
-    places_data = get_files_data("places.json")
+        # Split the words from the story part
+        sentence = sentence.split()
 
-    # Make a variable for the driving image and store in it the "file" attribute from the given character
-    image = get_character(sentence, characters_data)
-    # Make a variable for the driving video and store in it the corresponding file attribute
-    # depending on the noun's "type" attribute
-    video = get_action(sentence, characters_data, actions_data)
+        # Read the characters and actions JSONs and parse their data
+        characters_data = get_files_data("characters.json")
+        actions_data = get_files_data("actions.json")
+        places_data = get_files_data("places.json")
 
-    # Make a variable for an optional background image
-    place = get_place(sentence, places_data)
+        # Make a variable for the driving image and store in it the "file" attribute from the given character
+        image = get_character(sentence, characters_data)
+        # Make a variable for the driving video and store in it the corresponding file attribute
+        # depending on the noun's "type" attribute
+        video = get_action(sentence, characters_data, actions_data)
 
-    is_place_given = place is not None
+        # Make a variable for an optional background image
+        place = get_place(sentence, places_data)
 
-    # Generate a name for the result file with given character and action separated by "_"
-    result = f"{sentence[0]}-{sentence[1]}-{sentence[2]}.gif" if is_place_given\
-        else f"{sentence[0]}-{sentence[1]}.gif"
+        is_place_given = place is not None
 
-    # Generate the demo using the created variables for files names inputs
-    exec_terminal_command(30, image, video, result)
+        # Generate a name for the result file with given character and action separated by "_"
+        result = f"{sentence[0]}-{sentence[1]}-{sentence[2]}.gif" if is_place_given\
+            else f"{sentence[0]}-{sentence[1]}.gif"
 
-    # If there is a place given, generate background
-    if is_place_given:
-        # Get the resulted GIF as input and remove its white background
-        extract_frames(f"results/{result}")
-        remove_backgrounds(f"results/{result[:-4]}-frames")
+        # Generate the demo using the created variables for files names inputs
+        exec_terminal_command(30, image, video, result)
 
-        # Create a new GIF and overlap it on the background image
-        frames_count = Image.open(f"results/{result}").n_frames
+        # If there is a place given, generate background
+        if is_place_given:
+            # Get the resulted GIF as input and remove its white background
+            extract_frames(f"results/{result}")
+            remove_backgrounds(f"results/{result[:-4]}-frames")
 
-        generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}", frames_count)
-        shutil.rmtree(f"results/{result[:-4]}-frames")
+            # Create a new GIF and overlap it on the background image
+            frames_count = Image.open(f"results/{result}").n_frames
 
-    # If the 'say' verb is parsed, animate character dialogue
-    if is_text_given:
-        # Get the resulted GIF as input
-        extract_frames(f"results/{result}")
+            generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}", frames_count)
+            shutil.rmtree(f"results/{result[:-4]}-frames")
 
-        # Create a new GIF with text and overlap it on the old GIF without text
-        generate_gif_with_text(text, f"results/{result[:-4]}-frames")
-        shutil.rmtree(f"results/{result[:-4]}-frames")
+        # If the 'say' verb is parsed, animate character dialogue
+        if is_text_given:
+            # Get the resulted GIF as input
+            extract_frames(f"results/{result}")
+            gifs.append(f"results/{result}")
+
+            # Create a new GIF with text and overlap it on the old GIF without text
+            generate_gif_with_text(text, f"results/{result[:-4]}-frames")
+            shutil.rmtree(f"results/{result[:-4]}-frames")
+
+    if len(phrase) > 1:
+        frames = []
+
+        for gif in gifs:
+            extract_frames(gif)
+
+            for frame in range(Image.open(gif).n_frames):
+                frames.append(Image.open(f"{gif[:-4]}-frames/frame%02d.jpg" % frame))
+
+        frames[0].save('results/result.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
+
+        for gif in gifs:
+            shutil.rmtree(f"{gif[:-4]}-frames")
