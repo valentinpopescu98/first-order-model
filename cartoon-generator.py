@@ -70,17 +70,22 @@ def extract_frames(gif):
     while success:
         if not os.path.exists(f"{gif[:-4]}-frames"):
             os.makedirs(f"{gif[:-4]}-frames")
-        cv2.imwrite(f"{gif[:-4]}-frames\\frame%02d.jpg" % count, image)  # save frame as JPEG file
+        cv2.imwrite(f"{gif[:-4]}-frames/frame%02d.png" % count, image)  # save frame as JPEG file
         success, image = vid_cap.read()
         count += 1
 
-    print("Frame extraction successful!")
+    print("Frames extraction successful!")
 
 
 ########################################################################
-###                       REMOVE BACKGROUNDS                         ###
+###                REMOVE FRAMES BACKGROUNDS AND WRITE THEM          ###
 ########################################################################
-def remove_backgrounds(frames_dir_path):
+def extract_frames_transparent(frames_dir_path, transparent_frames_dir_path):
+    count = 0
+
+    if not os.path.exists(transparent_frames_dir_path):
+        os.makedirs(transparent_frames_dir_path)
+
     for img_path in glob.glob(f"{frames_dir_path}/*"):
         img = cv2.imread(img_path)
 
@@ -111,10 +116,10 @@ def remove_backgrounds(frames_dir_path):
         result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
         result[:, :, 3] = mask
 
-        cv2.imwrite(f"{img_path[:-4]}.png", result)
-        os.remove(img_path)
+        cv2.imwrite(f"{transparent_frames_dir_path}/frame%02d.png" % count, result)
+        count += 1
 
-    print("Frame background removal successful!")
+    print("Transparent frames extraction successful!")
 
 
 ########################################################################
@@ -137,7 +142,7 @@ def generate_gif_with_background(fg_frames_dir_path, bg_image_path, frames_count
     bg_image = Image.open(bg_image_path).convert(mode="RGBA")
 
     frames = tuple(overlap_gif_on_background(images, bg_image, (300, 300), (100, 200)))
-    frames[0].save(f'{fg_frames_dir_path[:-7]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
+    frames[0].save(f'{fg_frames_dir_path[:-19]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
     print("GIF overlap on background successful!")
 
@@ -176,7 +181,7 @@ def generate_gif_with_text(text, bg_frames_dir_path):
     frames_fg = create_text_animation_frames(text, ImageFont.truetype('arial', 20), "black", (0, 0))
 
     for frame in range(Image.open(f"{bg_frames_dir_path[:-7]}.gif").n_frames):
-        frames_bg.append(Image.open(f"{bg_frames_dir_path}/frame%02d.jpg" % frame).convert("RGBA"))
+        frames_bg.append(Image.open(f"{bg_frames_dir_path}/frame%02d.png" % frame).convert("RGBA"))
 
     longest = len(frames_fg) if len(frames_fg) > len(frames_bg) else len(frames_bg)
 
@@ -240,13 +245,13 @@ if __name__ == "__main__":
     if is_place_given:
         # Get the resulted GIF as input and remove its white background
         extract_frames(f"results/{result}")
-        remove_backgrounds(f"results/{result[:-4]}-frames")
+        extract_frames_transparent(f"results/{result[:-4]}-frames", f"results/{result[:-4]}-frames-transparent")
 
         # Create a new GIF and overlap it on the background image
         frames_count = Image.open(f"results/{result}").n_frames
 
-        generate_gif_with_background(f"results/{result[:-4]}-frames", f"cartoon_env/{place}", frames_count)
-        shutil.rmtree(f"results/{result[:-4]}-frames")
+        generate_gif_with_background(f"results/{result[:-4]}-frames-transparent",
+                                     f"cartoon_env/{place}", frames_count)
 
     # If the 'say' verb is parsed, animate character dialogue
     if is_text_given:
@@ -255,4 +260,9 @@ if __name__ == "__main__":
 
         # Create a new GIF with text and overlap it on the old GIF without text
         generate_gif_with_text(text, f"results/{result[:-4]}-frames")
+
+    # Clean-up
+    if is_place_given or is_text_given:
+        if is_place_given:
+            shutil.rmtree(f"results/{result[:-4]}-frames-transparent")
         shutil.rmtree(f"results/{result[:-4]}-frames")

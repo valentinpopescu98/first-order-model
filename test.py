@@ -173,7 +173,7 @@ def create_text_animation_frames(text, font, color, offset):
 ########################################################################
 def generate_gif_with_text(text, bg_frames_dir_path):
     frames_bg = []
-    frames_fg = create_text_animation_frames(text, ImageFont.truetype('arial', 20), "black", (0, 0))
+    frames_fg = create_text_animation_frames(text, ImageFont.truetype('arial', 25), "black", (0, 0))
 
     for frame in range(Image.open(f"{bg_frames_dir_path[:-7]}.gif").n_frames):
         frames_bg.append(Image.open(f"{bg_frames_dir_path}/frame%02d.jpg" % frame).convert("RGBA"))
