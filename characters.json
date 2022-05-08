@@ -1,10 +1,46 @@
 {
-  "scufita": {
-    "file": "scufita-side.png",
+  "barbatul": {
+    "file": "man.jpg",
     "type": "humanoid"
+  },
+  "scufita": {
+    "file": "red-riding-hood.png",
+    "type": "humanoid"
+  },
+  "vanatorul": {
+    "file": "hunter.jpg",
+    "type": "humanoid"
+  },
+  "cenusareasa": {
+    "file": "cinderella.png",
+    "type": "humanoid"
+  },
+  "vrajitoarea": {
+    "file": "witch.jpg",
+    "type": "humanoid"
+  },
+  "lupul": {
+    "file": "wolf-humanoid.jpg",
+    "type": "humanoid"
+  },
+  "lupul2": {
+    "file": "wolf-quadruped.jpg",
+    "type": "quadruped"
   },
   "calul": {
     "file": "horse.jpg",
     "type": "quadruped"
+  },
+  "dragonul": {
+    "file": "dragon-on-ground.jpg",
+    "type": "quadruped"
+  },
+  "dragonul2": {
+    "file": "dragon-in-air.png",
+    "type": "flying"
+  },
+  "cioara": {
+    "file": "crow.jpg",
+    "type": "flying"
   }
 }

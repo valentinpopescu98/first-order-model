@@ -35,6 +35,8 @@ def get_action(words, characters_json, actions_json):
         return actions_json[words[1]]["file_for_humanoid"]
     elif characters_json[words[0]]["type"] == "quadruped":
         return actions_json[words[1]]["file_for_quadruped"]
+    elif characters_json[words[0]]["type"] == "flying":
+        return actions_json[words[1]]["file_for_flying"]
 
 
 def get_place(words, places_json):

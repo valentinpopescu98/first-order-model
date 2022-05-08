@@ -6,5 +6,8 @@
   "alearga": {
     "file_for_humanoid": "man-run.gif",
     "file_for_quadruped": "horse-canter.gif"
+  },
+  "zboara": {
+    "file_for_flying": "bird-fly.gif"
   }
 }
