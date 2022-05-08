@@ -3,10 +3,13 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import cv2
 import numpy
 
 from PIL import Image, ImageDraw, ImageFont
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPlainTextEdit, QPushButton, QMessageBox
 
 
 ########################################################################
@@ -80,11 +83,11 @@ def extract_frames(gif):
 ########################################################################
 ###                REMOVE FRAMES BACKGROUNDS AND WRITE THEM          ###
 ########################################################################
-def extract_frames_transparent(frames_dir_path, transparent_frames_dir_path):
+def extract_frames_transparent(frames_dir_path):
     count = 0
 
-    if not os.path.exists(transparent_frames_dir_path):
-        os.makedirs(transparent_frames_dir_path)
+    if not os.path.exists(f"{frames_dir_path}-transparent"):
+        os.makedirs(f"{frames_dir_path}-transparent")
 
     for img_path in glob.glob(f"{frames_dir_path}/*"):
         img = cv2.imread(img_path)
@@ -116,7 +119,7 @@ def extract_frames_transparent(frames_dir_path, transparent_frames_dir_path):
         result = cv2.cvtColor(result, cv2.COLOR_BGR2BGRA)
         result[:, :, 3] = mask
 
-        cv2.imwrite(f"{transparent_frames_dir_path}/frame%02d.png" % count, result)
+        cv2.imwrite(f"{frames_dir_path}-transparent/frame%02d.png" % count, result)
         count += 1
 
     print("Transparent frames extraction successful!")
@@ -141,7 +144,7 @@ def generate_gif_with_background(fg_frames_dir_path, bg_image_path, frames_count
 
     bg_image = Image.open(bg_image_path).convert(mode="RGBA")
 
-    frames = tuple(overlap_gif_on_background(images, bg_image, (300, 300), (100, 200)))
+    frames = tuple(overlap_gif_on_background(images, bg_image, (300, 300), (100, 300)))
     frames[0].save(f'{fg_frames_dir_path[:-19]}.gif', save_all=True, append_images=frames[1:], loop=0, duration=30)
 
     print("GIF overlap on background successful!")
@@ -201,11 +204,11 @@ def generate_gif_with_text(text, bg_frames_dir_path):
 
 
 ########################################################################
-
-
-if __name__ == "__main__":
+###                  GENERATE THE CARTOON ANIMATION                  ###
+########################################################################
+def generate_cartoon(phrase):
     # Create 2 variables and input them from keyboard
-    phrase = input("Enter the sentence: ").split(". ")
+    phrase = phrase.split("\n")
 
     gifs = []
 
@@ -248,7 +251,7 @@ if __name__ == "__main__":
         if is_place_given:
             # Get the resulted GIF as input and remove its white background
             extract_frames(f"results/{result}")
-            extract_frames_transparent(f"results/{result[:-4]}-frames", f"results/{result[:-4]}-frames-transparent")
+            extract_frames_transparent(f"results/{result[:-4]}-frames")
 
             # Create a new GIF and overlap it on the background image
             frames_count = Image.open(f"results/{result}").n_frames
@@ -293,3 +296,59 @@ if __name__ == "__main__":
 # TODO: interfata grafica
 # TODO: cand se genereaza gif-ul final din mai multe gif-uri, sa se incadreze toate la dimensiunea celui mai mare
 # TODO: sa fac textul sa o ia de pe randul urmator cand nu mai are loc in imagine
+
+
+########################################################################
+###                          USER INTERFACE                          ###
+########################################################################
+def show_dialog(title, description, icon, font):
+    mbox = QMessageBox()
+
+    mbox.setIcon(icon)
+    mbox.setFont(font)
+    mbox.setWindowTitle(title)
+    mbox.setText(description)
+
+    mbox.exec_()
+
+
+def on_generate_click(phrase_text, text_font):
+    phrase = phrase_text.toPlainText()
+
+    if not phrase:
+        show_dialog("Error", "Please add text in the text field!", QMessageBox.Critical, text_font)
+    else:
+        generate_cartoon(phrase)
+        show_dialog("Success", "The animation was generated!", QMessageBox.Information, text_font)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    w = QWidget()
+    w.resize(500, 400)
+    w.setWindowTitle('Cartoon generator')
+
+    text_font = QFont("Arial", 12)
+
+    phrase_label = QLabel(w)
+    phrase_label.setFont(text_font)
+    phrase_label.setText("Enter your sentences:")
+    phrase_label.move(25, 15)
+    phrase_label.show()
+
+    phrase_text = QPlainTextEdit(w)
+    phrase_text.setFont(text_font)
+    phrase_text.resize(450, 300)
+    phrase_text.move(20, 35)
+    phrase_text.show()
+
+    generate_btn = QPushButton(w)
+    generate_btn.setFont(text_font)
+    generate_btn.setText('Generate')
+    generate_btn.resize(400, 20)
+    generate_btn.move(50, 360)
+    generate_btn.clicked.connect(lambda: on_generate_click(phrase_text, text_font))
+    generate_btn.show()
+
+    w.show()
+    sys.exit(app.exec_())
