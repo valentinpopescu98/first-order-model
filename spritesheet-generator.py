@@ -3,10 +3,14 @@ import os
 import os.path
 import shutil
 import subprocess
-
+import sys
 import cv2
 import numpy as np
+
 from PIL import Image
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QMessageBox
+
 
 ########################################################################
 ###                          GENERATE DEMO                           ###
@@ -26,16 +30,6 @@ def exec_terminal_command(fps, image, video, result):
 ########################################################################
 ###                          EXTRACT FRAMES                          ###
 ########################################################################
-def offset(nr, max_nr):
-    nr_temp = nr
-    max_nr_temp = max_nr
-
-    nr_len = len(str(nr_temp))
-    max_len = len(str(max_nr_temp))
-
-    return '0' * (max_len - nr_len) + str(nr)
-
-
 def extract_frames(gif):
     vid_cap = cv2.VideoCapture(gif)
     success, image = vid_cap.read()
@@ -44,17 +38,11 @@ def extract_frames(gif):
     while success:
         if not os.path.exists(f"{gif[:-4]}-frames"):
             os.makedirs(f"{gif[:-4]}-frames")
-        cv2.imwrite(f"{gif[:-4]}-frames\\frame%d.jpg" % count, image)  # save frame as JPEG file
+        cv2.imwrite(f"{gif[:-4]}-frames\\frame%02d.jpg" % count, image)  # save frame as JPEG file
         success, image = vid_cap.read()
-        print('Read a new frame: ', success)
         count += 1
 
-    max_count = len([name for name in os.listdir(f"{gif[:-4]}-frames\\.")]) - 1
-    for count in range(max_count + 1):
-        os.rename(f"{gif[:-4]}-frames\\frame%d.jpg" % count,
-                  f"{gif[:-4]}-frames\\frame%s.jpg" % offset(count, max_count))
-
-    print("Successful")
+    print("Frames extraction successful!")
 
 
 ########################################################################
@@ -98,7 +86,7 @@ def remove_backgrounds(frames_dir_path):
 ########################################################################
 ###                       GENERATE SPRITESHEET                       ###
 ########################################################################
-def generate_spritesheet(frames_dir_path):
+def create_spritesheet(frames_dir_path):
     images = [Image.open(img_path) for img_path in glob.glob(f"{frames_dir_path}/*")]
 
     widths, heights = zip(*(i.size for i in images))
@@ -113,28 +101,92 @@ def generate_spritesheet(frames_dir_path):
         new_im.paste(im, (x_offset, 0))
         x_offset += im.size[0]
 
-    # new_im = add_transparency(new_im)
-
     new_im.save(f"{frames_dir_path[:-7]}-spritesheet.png", "PNG")
 
 
 ########################################################################
-
-
-if __name__ == "__main__":
-    # Create 2 variables and input them from keyboard
-    words = input("Enter the sentence: ").split()
-
-    image = "horse.jpg"
-    video = "horse-canter.gif"
-
-    # Generate a name for the result file with given character and action separated by "_"
-    result = f"{words[0]}-{words[1]}.gif"
-
+###                                                                  ###
+########################################################################
+def generate_spritesheet(image, video):
     # Generate the demo using the created variables for files names inputs
-    exec_terminal_command(30, image, video, result)
+    exec_terminal_command(30, image, video, "spritesheet.gif")
 
-    extract_frames(f"results/{result}")
-    remove_backgrounds(f"results/{result[:-4]}-frames")
-    generate_spritesheet(f"results/{result[:-4]}-frames")
-    shutil.rmtree(f"results/{result[:-4]}-frames")
+    extract_frames(f"results/spritesheet.gif")
+    remove_backgrounds(f"results/spritesheet-frames")
+    create_spritesheet(f"results/spritesheet-frames")
+
+    shutil.rmtree(f"results/spritesheet-frames")
+    os.remove(f"results/spritesheet.gif")
+
+
+########################################################################
+###                          USER INTERFACE                          ###
+########################################################################
+def show_dialog(title, description, icon, font):
+    mbox = QMessageBox()
+
+    mbox.setIcon(icon)
+    mbox.setFont(font)
+    mbox.setWindowTitle(title)
+    mbox.setText(description)
+
+    mbox.exec_()
+
+
+def on_generate_click(image_text, video_text):
+    image = image_text.text()
+    video = video_text.text()
+
+    if not image and not video:
+        show_dialog("Error", "Please input the source image and driving video name!", QMessageBox.Critical, text_font)
+    elif not image:
+        show_dialog("Error", "Please input the source image name!", QMessageBox.Critical, text_font)
+    elif not video:
+        show_dialog("Error", "Please input the driving video name!", QMessageBox.Critical, text_font)
+    else:
+        generate_spritesheet(image, video)
+        show_dialog("Success", "The spritesheet was generated!", QMessageBox.Information, text_font)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+
+    w = QWidget()
+    w.resize(500, 400)
+    w.setWindowTitle('Cartoon generator')
+
+    text_font = QFont("Arial", 12)
+
+    image_label = QLabel(w)
+    image_label.setFont(text_font)
+    image_label.setText("Source image name:")
+    image_label.move(25, 15)
+    image_label.show()
+
+    image_text = QLineEdit(w)
+    image_text.setFont(text_font)
+    image_text.resize(450, 20)
+    image_text.move(20, 35)
+    image_text.show()
+
+    video_label = QLabel(w)
+    video_label.setFont(text_font)
+    video_label.setText("Driving video name:")
+    video_label.move(25, 60)
+    video_label.show()
+
+    video_text = QLineEdit(w)
+    video_text.setFont(text_font)
+    video_text.resize(450, 20)
+    video_text.move(20, 80)
+    video_text.show()
+
+    generate_btn = QPushButton(w)
+    generate_btn.setFont(text_font)
+    generate_btn.setText('GENERATE')
+    generate_btn.resize(400, 20)
+    generate_btn.move(50, 360)
+    generate_btn.clicked.connect(lambda: on_generate_click(image_text, video_text))
+    generate_btn.show()
+
+    w.show()
+    sys.exit(app.exec_())

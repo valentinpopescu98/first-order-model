@@ -321,6 +321,7 @@ def on_generate_click(phrase_text, text_font):
         generate_cartoon(phrase)
         show_dialog("Success", "The animation was generated!", QMessageBox.Information, text_font)
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
@@ -344,7 +345,7 @@ if __name__ == "__main__":
 
     generate_btn = QPushButton(w)
     generate_btn.setFont(text_font)
-    generate_btn.setText('Generate')
+    generate_btn.setText('GENERATE')
     generate_btn.resize(400, 20)
     generate_btn.move(50, 360)
     generate_btn.clicked.connect(lambda: on_generate_click(phrase_text, text_font))
