@@ -4,11 +4,14 @@ import os
 import shutil
 import subprocess
 import sys
+from threading import Thread
+
 import cv2
 import numpy
 
 from PIL import Image, ImageDraw, ImageFont
-from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtGui import QFont, QTextCursor
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPlainTextEdit, QPushButton, QMessageBox
 
 
@@ -60,7 +63,7 @@ def exec_terminal_command(fps, image, video, result):
 
     os.chdir("..")
 
-    print("GIF generation successful!")
+    print("FOM demo generation successful!")
 
 
 ########################################################################
@@ -124,7 +127,7 @@ def extract_frames_transparent(frames_dir_path):
         cv2.imwrite(f"{frames_dir_path}-transparent/frame%02d.png" % count, result)
         count += 1
 
-    print("Transparent frames extraction successful!")
+    print("Removed extracted frames background!")
 
 
 ########################################################################
@@ -156,11 +159,10 @@ def generate_gif_with_background(fg_frames_dir_path, bg_image_path, frames_count
 ###                    GENERATE GIF WITH ONLY TEXT                   ###
 ########################################################################
 def create_image_with_text(text, font, color, offset):
-    x, y = offset
-
     img = Image.new('RGBA', (400, 400))
     draw = ImageDraw.Draw(img)
-    draw.text((x, y), text, font=font, fill=color)
+    draw.text((offset[0], offset[1]), text, font=font, fill=color)
+
     return img
 
 
@@ -175,6 +177,7 @@ def create_text_animation_frames(text, font, color, offset):
             new_frame = create_image_with_text(text, font, color, (x, y))
         frames.append(new_frame)
 
+    print("Generated text animation!")
     return frames
 
 
@@ -203,6 +206,8 @@ def generate_gif_with_text(text, bg_frames_dir_path):
         results.append(bg)
 
     results[0].save(f"{bg_frames_dir_path[:-7]}.gif", save_all=True, append_images=results[1:], loop=0, duration=30)
+
+    print("Text overlap on GIF successful!")
 
 
 ########################################################################
@@ -243,7 +248,7 @@ def generate_cartoon(phrase):
         is_place_given = place is not None
 
         # Generate a name for the result file with given character and action separated by "_"
-        result = f"{sentence[0]}-{sentence[1]}-{sentence[2]}.gif" if is_place_given\
+        result = f"{sentence[0]}-{sentence[1]}-{sentence[2]}.gif" if is_place_given \
             else f"{sentence[0]}-{sentence[1]}.gif"
 
         # Generate the demo using the created variables for files names inputs
@@ -278,6 +283,8 @@ def generate_cartoon(phrase):
                 shutil.rmtree(f"results/{result[:-4]}-frames-transparent")
             shutil.rmtree(f"results/{result[:-4]}-frames")
 
+        print(f'GIF {result} generated successfully!')
+
     # Only if the paragraph is composed of more than one sentences
     if len(phrase) > 1:
         frames = []
@@ -295,6 +302,9 @@ def generate_cartoon(phrase):
             os.remove(gif)
             shutil.rmtree(f"{gif[:-4]}-frames")
 
+    return "animation.gif" if len(phrase) > 1 else result
+
+
 # TODO: interfata grafica
 # TODO: cand se genereaza gif-ul final din mai multe gif-uri, sa se incadreze toate la dimensiunea celui mai mare
 # TODO: sa fac textul sa o ia de pe randul urmator cand nu mai are loc in imagine
@@ -303,55 +313,92 @@ def generate_cartoon(phrase):
 ########################################################################
 ###                          USER INTERFACE                          ###
 ########################################################################
-def show_dialog(title, description, icon, font):
-    mbox = QMessageBox()
+class Stream(QObject):
+    new_text = pyqtSignal(str)
 
-    mbox.setIcon(icon)
-    mbox.setFont(font)
-    mbox.setWindowTitle(title)
-    mbox.setText(description)
-
-    mbox.exec_()
+    def write(self, text):
+        self.new_text.emit(str(text))
 
 
-def on_generate_click(phrase_text, text_font):
-    phrase = phrase_text.toPlainText()
+class Window(QWidget):
+    text_font = QFont("Arial", 12)
 
-    if not phrase:
-        show_dialog("Error", "Please add text in the text field!", QMessageBox.Critical, text_font)
-    else:
-        generate_cartoon(phrase)
-        show_dialog("Success", "The animation was generated!", QMessageBox.Information, text_font)
+    def __init__(self, size, name):
+        super(Window, self).__init__()
+        self.resize(size[0], size[1])
+        self.setWindowTitle(name)
+
+    def __del__(self):
+        sys.stdout = sys.__stdout__
+
+    def create_label(self, text, offset):
+        label = QLabel(self)
+        label.setFont(self.text_font)
+        label.setText(text)
+        label.move(offset[0], offset[1])
+        label.show()
+
+    def create_text_box_with_scroll(self, size, offset):
+        text_box = QPlainTextEdit(self)
+        text_box.setFont(self.text_font)
+        text_box.resize(size[0], size[1])
+        text_box.move(offset[0], offset[1])
+        text_box.show()
+
+        return text_box
+
+    def create_button(self, text, size, offset):
+        btn = QPushButton(self)
+        btn.setFont(self.text_font)
+        btn.setText(text)
+        btn.resize(size[0], size[1])
+        btn.move(offset[0], offset[1])
+        btn.show()
+
+        return btn
+
+    def show_dialog(self, title, description, icon, font):
+        mbox = QMessageBox()
+
+        mbox.setIcon(icon)
+        mbox.setFont(font)
+        mbox.setWindowTitle(title)
+        mbox.setText(description)
+
+        mbox.exec_()
+
+    def on_generate_click(self, phrase_text):
+        phrase = phrase_text.toPlainText()
+
+        if not phrase:
+            self.show_dialog("Error", "Please add text in the text field!", QMessageBox.Critical, self.text_font)
+        else:
+            animation = generate_cartoon(phrase)
+            os.startfile(os.path.normpath(f"results/{animation}"))
+            self.show_dialog("Success", "The animation was generated!", QMessageBox.Information, self.text_font)
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    w = QWidget()
-    w.resize(500, 400)
-    w.setWindowTitle('Cartoon generator')
+    gui = Window((500, 725), 'Cartoon generator')
 
-    text_font = QFont("Arial", 12)
+    gui.create_label('Enter your sentences', (25, 15))
+    phrase_text = gui.create_text_box_with_scroll((450, 300), (20, 35))
 
-    phrase_label = QLabel(w)
-    phrase_label.setFont(text_font)
-    phrase_label.setText("Enter your sentences:")
-    phrase_label.move(25, 15)
-    phrase_label.show()
+    gui.create_label('Generation progress', (23, 355))
+    output_text = gui.create_text_box_with_scroll((450, 300), (20, 375))
 
-    phrase_text = QPlainTextEdit(w)
-    phrase_text.setFont(text_font)
-    phrase_text.resize(450, 300)
-    phrase_text.move(20, 35)
-    phrase_text.show()
+    def on_update_text(text):
+        output_text.moveCursor(QTextCursor.End)
+        output_text.insertPlainText(text)
 
-    generate_btn = QPushButton(w)
-    generate_btn.setFont(text_font)
-    generate_btn.setText('GENERATE')
-    generate_btn.resize(400, 20)
-    generate_btn.move(50, 360)
-    generate_btn.clicked.connect(lambda: on_generate_click(phrase_text, text_font))
-    generate_btn.show()
+    generate_btn = gui.create_button('GENERATE', (400, 20), (50, 695))
 
-    w.show()
+    generator_thread = Thread(target=gui.on_generate_click, args=[phrase_text])
+    generate_btn.clicked.connect(generator_thread.start)
+
+    gui.show()
+    sys.stdout = Stream(new_text=on_update_text)
+
     sys.exit(app.exec_())
