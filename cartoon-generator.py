@@ -283,6 +283,7 @@ def generate_cartoon(phrase):
                 shutil.rmtree(f"results/{result[:-4]}-frames-transparent")
             shutil.rmtree(f"results/{result[:-4]}-frames")
 
+        os.startfile(os.path.normpath(f"results/{result}"))
         print(f'GIF {result} generated successfully!')
 
     # Only if the paragraph is composed of more than one sentences
@@ -299,13 +300,12 @@ def generate_cartoon(phrase):
 
         # Clean-up
         for gif in gifs:
-            os.remove(gif)
             shutil.rmtree(f"{gif[:-4]}-frames")
 
-    return "animation.gif" if len(phrase) > 1 else result
+        os.startfile(os.path.normpath(f"results/animation.gif"))
+        print(f'Final GIF generated successfully!')
 
 
-# TODO: interfata grafica
 # TODO: cand se genereaza gif-ul final din mai multe gif-uri, sa se incadreze toate la dimensiunea celui mai mare
 # TODO: sa fac textul sa o ia de pe randul urmator cand nu mai are loc in imagine
 
@@ -367,15 +367,19 @@ class Window(QWidget):
 
         mbox.exec_()
 
-    def on_generate_click(self, phrase_text):
+    def on_generate_click(self, phrase_text, output_text):
         phrase = phrase_text.toPlainText()
 
         if not phrase:
             self.show_dialog("Error", "Please add text in the text field!", QMessageBox.Critical, self.text_font)
         else:
-            animation = generate_cartoon(phrase)
-            os.startfile(os.path.normpath(f"results/{animation}"))
-            self.show_dialog("Success", "The animation was generated!", QMessageBox.Information, self.text_font)
+            output_text.clear()
+
+            generator_thread = Thread(target=generate_cartoon, args=[phrase])
+            generator_thread.start()
+
+            # generator_thread.join()
+            # self.show_dialog("Success", "The animation was generated!", QMessageBox.Information, self.text_font)
 
 
 if __name__ == "__main__":
@@ -394,9 +398,7 @@ if __name__ == "__main__":
         output_text.insertPlainText(text)
 
     generate_btn = gui.create_button('GENERATE', (400, 20), (50, 695))
-
-    generator_thread = Thread(target=gui.on_generate_click, args=[phrase_text])
-    generate_btn.clicked.connect(generator_thread.start)
+    generate_btn.clicked.connect(lambda: gui.on_generate_click(phrase_text, output_text))
 
     gui.show()
     sys.stdout = Stream(new_text=on_update_text)
