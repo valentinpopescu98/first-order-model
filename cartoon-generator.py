@@ -381,6 +381,10 @@ class Window(QWidget):
             # generator_thread.join()
             # self.show_dialog("Success", "The animation was generated!", QMessageBox.Information, self.text_font)
 
+    def on_update_text(self, text):
+        output_text.moveCursor(QTextCursor.End)
+        output_text.insertPlainText(text)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -393,14 +397,10 @@ if __name__ == "__main__":
     gui.create_label('Generation progress', (23, 355))
     output_text = gui.create_text_box_with_scroll((450, 300), (20, 375))
 
-    def on_update_text(text):
-        output_text.moveCursor(QTextCursor.End)
-        output_text.insertPlainText(text)
-
     generate_btn = gui.create_button('GENERATE', (400, 20), (50, 695))
     generate_btn.clicked.connect(lambda: gui.on_generate_click(phrase_text, output_text))
 
     gui.show()
-    sys.stdout = Stream(new_text=on_update_text)
+    sys.stdout = Stream(new_text=gui.on_update_text)
 
     sys.exit(app.exec_())
