@@ -389,15 +389,15 @@ class Window(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    gui = Window((500, 725), 'Cartoon generator')
+    gui = Window((1000, 400), 'Cartoon generator')
 
     gui.create_label('Enter your sentences', (25, 15))
     phrase_text = gui.create_text_box_with_scroll((450, 300), (20, 35))
 
-    gui.create_label('Generation progress', (23, 355))
-    output_text = gui.create_text_box_with_scroll((450, 300), (20, 375))
+    gui.create_label('Generation progress', (505, 15))
+    output_text = gui.create_text_box_with_scroll((450, 300), (500, 35))
 
-    generate_btn = gui.create_button('GENERATE', (400, 20), (50, 695))
+    generate_btn = gui.create_button('GENERATE', (800, 20), (100, 355))
     generate_btn.clicked.connect(lambda: gui.on_generate_click(phrase_text, output_text))
 
     gui.show()
