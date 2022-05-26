@@ -9,9 +9,10 @@ PyYAML~=5.1
 scikit-image~=0.14.0 # was 0.17.2 for me
 scikit-learn~=0.19.2
 scipy~=1.1.0
-torch~=1.0.0 # was 1.9.0 for me
-torchvision~=0.2.1
+torch~=1.0.0 # was 1.9.0 for me; install with conda
+torchvision~=0.2.1 # install with conda
 tqdm~=4.24.0
+cudatoolkit~=10.2.89 # install with conda
 
 # Cartoon and spritesheet generator requirements
 opencv-python~=4.5.3.56

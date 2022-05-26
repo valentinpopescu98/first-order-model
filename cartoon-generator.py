@@ -214,7 +214,7 @@ def generate_gif_with_text(text, bg_frames_dir_path):
 ###                  GENERATE THE CARTOON ANIMATION                  ###
 ########################################################################
 def generate_cartoon(phrase):
-    # Create 2 variables and input them from keyboard
+    # Split phrases into sentences
     phrase = phrase.split("\n")
 
     gifs = []
